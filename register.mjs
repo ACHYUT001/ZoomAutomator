@@ -23,6 +23,7 @@ if (!FIRST || !LAST || !EMAIL) {
 }
 
 const subjects = JSON.parse(readFileSync(new URL('./subjects.json', import.meta.url), 'utf8'))
+  .map((s) => ({ ...s, url: (s.url || '').trim() }))
   .filter((s) => s.url && !s.url.startsWith('PASTE_'));
 
 if (subjects.length === 0) {
