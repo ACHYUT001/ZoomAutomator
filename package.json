@@ -1,0 +1,13 @@
+{
+  "name": "zoom-auto-register",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled real-browser auto-registration for recurring Zoom classes.",
+  "scripts": {
+    "register": "node register.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}

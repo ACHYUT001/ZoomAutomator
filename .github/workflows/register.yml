@@ -1,0 +1,41 @@
+name: Zoom auto-register
+
+on:
+  # Times are UTC. Defaults below cover weekend sessions (IST = UTC+5:30):
+  #   Fri 17:00 IST  and  Sat 06:00 IST. Adjust to your class schedule.
+  schedule:
+    - cron: '30 11 * * 5'   # Friday 17:00 IST
+    - cron: '30 0 * * 6'    # Saturday 06:00 IST
+  workflow_dispatch:          # lets you run it manually from the Actions tab
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Register for all subjects
+        # xvfb gives Chromium a real display (headed = more browser-like).
+        run: xvfb-run --auto-servernum -- node register.mjs
+        env:
+          ZOOM_FIRST: ${{ secrets.ZOOM_FIRST }}
+          ZOOM_LAST: ${{ secrets.ZOOM_LAST }}
+          ZOOM_EMAIL: ${{ secrets.ZOOM_EMAIL }}
+
+      - name: Upload failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: 'fail-*.png'
+          if-no-files-found: ignore
