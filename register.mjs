@@ -113,6 +113,13 @@ const context = await browser.newContext({
 let failures = 0;
 for (const subject of subjects) {
   const page = await context.newPage();
+
+  // "Register and Join" tries to launch the Zoom client. Neutralise the side
+  // effects: auto-dismiss any JS/beforeunload dialog and close any popup tab.
+  // (No Zoom app exists on the runner, so the zoommtg:// launch just no-ops.)
+  page.on('dialog', (d) => d.dismiss().catch(() => {}));
+  page.on('popup', (p) => p.close().catch(() => {}));
+
   try {
     console.log(`\n=== ${subject.name} ===`);
     const result = await registerOnPage(page, subject);
