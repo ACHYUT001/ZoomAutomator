@@ -33,56 +33,66 @@ if (subjects.length === 0) {
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
 
-// Find the input whose label/name/placeholder matches `pattern`, then fill it.
-async function fillField(page, pattern, value) {
-  const handle = await page.evaluateHandle((p) => {
-    const rx = new RegExp(p, 'i');
-    const hint = (e) => {
-      const b = [e.id, e.name, e.placeholder, e.getAttribute('aria-label') || ''];
-      if (e.id) {
-        const l = document.querySelector('label[for="' + e.id + '"]');
-        if (l) b.push(l.textContent);
-      }
-      const w = e.closest('label');
-      if (w) b.push(w.textContent);
-      return b.join(' ');
-    };
-    const inputs = Array.from(document.querySelectorAll('input'));
-    return inputs.find((e) => rx.test(hint(e))) || null;
-  }, pattern);
-
-  const el = handle.asElement();
-  if (!el) throw new Error('Field not found for /' + pattern + '/');
-  await el.fill(value);
+// Fill the first VISIBLE field matching any candidate locator (skips hidden inputs).
+async function fillFirst(page, value, candidates, label) {
+  for (const make of candidates) {
+    const loc = make(page).first();
+    try {
+      await loc.waitFor({ state: 'visible', timeout: 8000 });
+      await loc.fill(value);
+      return;
+    } catch { /* try the next candidate */ }
+  }
+  throw new Error('No visible field matched for ' + label);
 }
 
 async function registerOnPage(page, subject) {
-  await page.goto(subject.url, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.waitForSelector('input', { timeout: 30000 });
+  await page.goto(subject.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-  await fillField(page, 'first', FIRST);
-  await fillField(page, 'last|surname', LAST);
-  await fillField(page, 'e-?mail', EMAIL);
+  // Form is ready once the VISIBLE First Name field appears (not the hidden inputs).
+  const firstName = page.getByPlaceholder(/first name/i).or(page.getByLabel(/first name/i));
+  await firstName.first().waitFor({ state: 'visible', timeout: 45000 });
+  await firstName.first().fill(FIRST);
 
+  await fillFirst(page, LAST, [
+    (p) => p.getByPlaceholder(/last name|surname/i),
+    (p) => p.getByLabel(/last name|surname/i)
+  ], 'last name');
+
+  await fillFirst(page, EMAIL, [
+    (p) => p.getByPlaceholder(/@|e-?mail/i),
+    (p) => p.getByLabel(/e-?mail/i),
+    (p) => p.locator('input[type="email"]')
+  ], 'email');
+
+  // Let React commit the field values before submitting.
+  await page.waitForTimeout(300);
+
+  const urlBefore = page.url();
+  // Button reads "Register" or "Register and Join" (when the meeting has started).
   await page.getByRole('button', { name: /register/i }).first().click();
 
-  // Wait for a success signal (approval text, join link, or "already registered").
-  await page
-    .waitForFunction(() => {
-      const t = (document.body.innerText || '').toLowerCase();
-      return (
-        t.includes('approved') ||
-        t.includes('has been received') ||
-        t.includes('thank you for registering') ||
-        t.includes('already registered') ||
-        !!document.querySelector('a[href*="/w/"]')
-      );
-    }, { timeout: 30000 })
-    .catch(() => { /* fall through; we log page text below */ });
+  // Success = confirmation text, a join link, "already registered", or navigation.
+  try {
+    await Promise.race([
+      page.waitForURL((u) => u.toString() !== urlBefore, { timeout: 20000 }),
+      page.waitForFunction(() => {
+        const t = (document.body.innerText || '').toLowerCase();
+        return (
+          t.includes('approved') ||
+          t.includes('has been received') ||
+          t.includes('thank you for registering') ||
+          t.includes('already registered') ||
+          !!document.querySelector('a[href*="/w/"]')
+        );
+      }, { timeout: 20000 })
+    ]);
+  } catch { /* fall through to text inspection */ }
 
-  const text = (await page.innerText('body')).toLowerCase();
+  const text = (await page.innerText('body').catch(() => '')).toLowerCase();
   if (text.includes('already registered')) return 'already-registered';
   if (
+    page.url() !== urlBefore ||
     text.includes('approved') ||
     text.includes('thank you for registering') ||
     text.includes('has been received') ||
