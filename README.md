@@ -53,8 +53,11 @@ Add three secrets:
   **Artifacts** (`screenshots`); open it to see what the page showed.
 
 ### 5. Let it run on schedule
-The default schedule (in `register.yml`) is **Fri 17:00 IST** and **Sat 06:00 IST**.
+The default schedule (in `register.yml`) is **Fri 17:00 IST** and **Sat 05:30 IST**.
 Edit the two `cron` lines (they're in **UTC**) to match your class days/times.
+The Apps Script calendar sync (parent folder) runs shortly after, at **Fri 18:00**
+and **Sat 06:00 IST** — keep it a bit later than the Action so the confirmation
+emails have arrived.
 
 ## How registration + calendar fit together
 
