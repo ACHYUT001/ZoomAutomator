@@ -1,12 +1,13 @@
 name: Zoom auto-register
 
 on:
-  # Times are UTC. Defaults below cover weekend sessions (IST = UTC+5:30):
-  #   Fri 17:00 IST  and  Sat 05:30 IST. Adjust to your class schedule.
-  # The Apps Script calendar sync runs shortly AFTER these (Fri 18:00 / Sat 06:00 IST).
+  # Times are UTC. One run per week (Fri 17:00 IST) covers the whole weekend:
+  # each subject's "next occurrence" from Friday is this weekend's session, so a
+  # single run registers Sat AND Sun sessions with NO duplicate confirmation
+  # emails. Use "Run workflow" (workflow_dispatch) as a manual retry if needed.
+  # The Apps Script calendar sync runs shortly after (Fri 18:00 IST).
   schedule:
     - cron: '30 11 * * 5'   # Friday 17:00 IST
-    - cron: '0 0 * * 6'     # Saturday 05:30 IST
   workflow_dispatch:          # lets you run it manually from the Actions tab
 
 jobs:
