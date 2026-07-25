@@ -4,7 +4,7 @@ on:
   # Times are UTC. Two runs: Fri 20:00 IST and Sat 20:00 IST. The Saturday run
   # re-registers so that any Sunday schedule changes announced on Saturday are
   # picked up. Confirmation emails may duplicate for Sunday sessions, but the
-  # Apps Script archives them out of the inbox and never duplicates calendar
+  # Apps Script moves them to Trash and reschedules (never duplicates) calendar
   # events. Use "Run workflow" (workflow_dispatch) as a manual retry.
   # The Apps Script calendar sync runs shortly after (Fri/Sat 21:00 IST).
   schedule:

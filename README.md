@@ -55,8 +55,8 @@ Add three secrets:
 ### 5. Let it run on schedule
 The default schedule (in `register.yml`) is **Fri 20:00 IST** and **Sat 20:00 IST**.
 The Saturday run re-registers so that Sunday schedule changes announced on Saturday
-are caught. (Sunday confirmation emails may duplicate, but the Apps Script archives
-them out of your inbox and never duplicates calendar events.) Edit the `cron` lines
+are caught. (Sunday confirmation emails may duplicate, but the Apps Script moves
+them to Trash and reschedules — never duplicates — calendar events.) Edit the `cron` lines
 (they're in **UTC**) for your class days, and use **Run workflow** as a manual retry.
 The Apps Script calendar sync (parent folder) runs shortly after, at **Fri/Sat 21:00 IST**.
 
